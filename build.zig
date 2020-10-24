@@ -4,10 +4,8 @@ const LibExeObjStep = std.build.LibExeObjStep;
 const Pkg = std.build.Pkg;
 
 pub const EngineConfig = struct {
-    windowModule: []const u8 = "didot-glfw",
-    /// Whether or not to automatically set the window module depending on the target platform.
     /// didot-glfw will be used for Windows and didot-x11 will be used for Linux.
-    autoWindow: bool = true
+    windowModule: []const u8 = "didot-glfw", autoWindow: bool = true
 };
 
 /// hacky workaround some compiler bug
@@ -16,27 +14,28 @@ var graphics_deps: [3]Pkg = undefined;
 pub fn addEngineToExe(step: *LibExeObjStep, comptime config: EngineConfig) !void {
     var allocator = step.builder.allocator;
 
-    const zlm = Pkg {
+    const zlm = Pkg{
         .name = "zlm",
-        .path = "zlm/zlm.zig"
+        .path = "zlm/zlm.zig",
     };
-    const image = Pkg {
+    const image = Pkg{
         .name = "didot-image",
-        .path = "didot-image/image.zig"
+        .path = "didot-image/image.zig",
     };
 
     var windowModule = config.windowModule;
     if (config.autoWindow) {
         const target = step.target.toTarget().os.tag;
+        std.debug.print("Target {}\n", .{target});
         switch (target) {
             .linux => {
-                windowModule = "didot-x11";
+                windowModule = "didot-glfw"; // was didot-x11
             },
-            else => {}
+            else => {},
         }
     }
 
-    const windowPath = try std.mem.concat(allocator, u8, &[_][]const u8{windowModule, "/window.zig"});
+    const windowPath = try std.mem.concat(allocator, u8, &[_][]const u8{ windowModule, "/window.zig" });
     if (std.mem.eql(u8, config.windowModule, "didot-glfw")) {
         step.linkSystemLibrary("glfw");
         step.linkSystemLibrary("c");
@@ -45,36 +44,36 @@ pub fn addEngineToExe(step: *LibExeObjStep, comptime config: EngineConfig) !void
         step.linkSystemLibrary("X11");
         step.linkSystemLibrary("c");
     }
-    const window = Pkg {
+    const window = Pkg{
         .name = "didot-window",
         .path = windowPath,
-        .dependencies = &[_]Pkg{zlm}
+        .dependencies = &[_]Pkg{zlm},
     };
     graphics_deps[0] = window;
     graphics_deps[1] = image;
     graphics_deps[2] = zlm;
 
-    const graphics = Pkg {
+    const graphics = Pkg{
         .name = "didot-graphics",
         .path = "didot-opengl/graphics.zig",
-        .dependencies = &graphics_deps
+        .dependencies = &graphics_deps,
     };
     step.linkSystemLibrary("GL");
 
-    const objects = Pkg {
+    const objects = Pkg{
         .name = "didot-objects",
         .path = "didot-objects/objects.zig",
-        .dependencies = &[_]Pkg{zlm,graphics}
+        .dependencies = &[_]Pkg{ zlm, graphics },
     };
-    const models = Pkg {
+    const models = Pkg{
         .name = "didot-models",
         .path = "didot-models/models.zig",
-        .dependencies = &[_]Pkg{zlm,graphics}
+        .dependencies = &[_]Pkg{ zlm, graphics },
     };
-    const app = Pkg {
+    const app = Pkg{
         .name = "didot-app",
         .path = "didot-app/app.zig",
-        .dependencies = &[_]Pkg{objects,graphics}
+        .dependencies = &[_]Pkg{ objects, graphics },
     };
 
     step.addPackage(zlm);
@@ -94,9 +93,7 @@ pub fn build(b: *Builder) !void {
     const exe = b.addExecutable("didot-example-scene", "examples/kart-and-cubes/example-scene.zig");
     exe.setTarget(target);
     exe.setBuildMode(if (stripExample) @import("builtin").Mode.ReleaseSmall else mode);
-    try addEngineToExe(exe, .{
-        .windowModule = "didot-x11"
-    });
+    try addEngineToExe(exe, .{ .windowModule = "didot-glfw" });
     exe.single_threaded = stripExample;
     exe.strip = stripExample;
     exe.install();
@@ -106,14 +103,12 @@ pub fn build(b: *Builder) !void {
         otest.emit_docs = true;
         //otest.emit_bin = false;
         otest.setOutputDir("docs");
-        try addEngineToExe(otest, .{
-            .autoWindow = false
-        });
+        try addEngineToExe(otest, .{ .autoWindow = false });
 
         const test_step = b.step("doc", "Test and document Didot");
         test_step.dependOn(&otest.step);
     } else {
-        const no_doc = b.addSystemCommand(&[_][]const u8{"echo", "Please build with the latest version of Zig to be able to emit documentation."});
+        const no_doc = b.addSystemCommand(&[_][]const u8{ "echo", "Please build with the latest version of Zig to be able to emit documentation." });
         const no_doc_step = b.step("doc", "Test and document Didot");
         no_doc_step.dependOn(&no_doc.step);
     }

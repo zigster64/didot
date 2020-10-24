@@ -41,16 +41,16 @@ fn cameraInput(allocator: *Allocator, gameObject: *GameObject, delta: f32) !void
         gameObject.position = gameObject.position.add(left.scale(-speed));
     }
 
-    // if (input.isMouseButtonDown(.Left)) {
-    //     input.setMouseInputMode(.Grabbed);
-    // } else if (input.isKeyDown(Input.KEY_ESCAPE)) {
-    //     input.setMouseInputMode(.Normal);
-    // }
+    if (input.isMouseButtonDown(.Left)) {
+        input.setMouseInputMode(.Grabbed);
+    } else if (input.isKeyDown(Input.KEY_ESCAPE)) {
+        input.setMouseInputMode(.Normal);
+    }
 
-    // if (input.getMouseInputMode() == .Grabbed) {
-    //     gameObject.rotation.x -= (input.mouseDelta.x / 300.0) * delta;
-    //     gameObject.rotation.y -= (input.mouseDelta.y / 300.0) * delta;
-    // }
+    if (input.getMouseInputMode() == .Grabbed) {
+        gameObject.rotation.x -= (input.mouseDelta.x / 300.0) * delta;
+        gameObject.rotation.y -= (input.mouseDelta.y / 300.0) * delta;
+    }
 
     // if (input.getJoystick(0)) |joystick| {
     //     const axes = joystick.getRawAxes();
@@ -79,8 +79,8 @@ fn cameraInput(allocator: *Allocator, gameObject: *GameObject, delta: f32) !void
 
 fn testLight(allocator: *Allocator, gameObject: *GameObject, delta: f32) !void {
     const time = @intToFloat(f64, std.time.milliTimestamp());
-    const rad = @floatCast(f32, @mod((time/1000.0), std.math.pi*2.0));
-    gameObject.position = Vec3.new(std.math.sin(rad)*10+5, 3, std.math.cos(rad)*10-10);
+    const rad = @floatCast(f32, @mod((time / 1000.0), std.math.pi * 2.0));
+    gameObject.position = Vec3.new(std.math.sin(rad) * 10 + 5, 3, std.math.cos(rad) * 10 - 10);
 }
 
 fn init(allocator: *Allocator, app: *Application) !void {
@@ -91,9 +91,7 @@ fn init(allocator: *Allocator, app: *Application) !void {
     var grassImage = try bmp.read_bmp(allocator, "grass.bmp");
     var texture = Texture.create(grassImage);
     grassImage.deinit(); // it's now uploaded to the GPU, so we can free the image.
-    var grassMaterial = Material {
-        .texture = texture
-    };
+    var grassMaterial = Material{ .texture = texture };
 
     var camera = try Camera.create(allocator, shader);
     camera.gameObject.position = Vec3.new(1.5, 1.5, -0.5);
@@ -124,7 +122,7 @@ fn init(allocator: *Allocator, app: *Application) !void {
         var j: f32 = 0;
         while (j < 5) {
             var kart2 = GameObject.createObject(allocator, kartMesh);
-            kart2.position = Vec3.new(0.7 + (j*8), 0.75, -8 - (i*3));
+            kart2.position = Vec3.new(0.7 + (j * 8), 0.75, -8 - (i * 3));
             try scene.add(kart2);
             j += 1;
         }
@@ -141,7 +139,7 @@ fn init(allocator: *Allocator, app: *Application) !void {
     //std.debug.warn("{} bytes used after init.\n", .{gp.total_requested_bytes});
 }
 
-var gp: std.heap.GeneralPurposeAllocator(.{.enable_memory_limit = true}) = undefined;
+var gp: std.heap.GeneralPurposeAllocator(.{ .enable_memory_limit = true }) = undefined;
 
 pub fn main() !void {
     gp = .{};
@@ -152,9 +150,9 @@ pub fn main() !void {
 
     var scene = try Scene.create(allocator);
 
-    var app = Application {
+    var app = Application{
         .title = "Test Cubes",
-        .initFn = init
+        .initFn = init,
     };
     try app.start(allocator, scene);
 }
